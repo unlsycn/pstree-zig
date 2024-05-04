@@ -1,15 +1,28 @@
 const std = @import("std");
 
-pub fn build(b: *std.Build) void {
-    const target = b.standardTargetOptions(.{});
-    const optimize = b.standardOptimizeOption(.{});
+const targets: []const std.Target.Query = &.{
+    .{ .cpu_arch = .x86_64 },
+    .{ .cpu_arch = .x86 },
+};
 
-    const exe = b.addExecutable(.{
-        .name = "pstree",
-        .root_source_file = .{ .path = "src/pstree.zig" },
-        .target = target,
-        .optimize = optimize,
-    });
+pub fn build(b: *std.Build) !void {
+    const optimeze = b.standardOptimizeOption(.{});
+    for (targets) |t| {
+        const exe = b.addExecutable(.{
+            .name = "pstree",
+            .root_source_file = .{ .path = "src/pstree.zig" },
+            .target = b.resolveTargetQuery(t),
+            .optimize = optimeze,
+        });
 
-    b.installArtifact(exe);
+        const target_output = b.addInstallArtifact(exe, .{
+            .dest_dir = .{
+                .override = .{
+                    .custom = try t.zigTriple(b.allocator),
+                },
+            },
+        });
+
+        b.getInstallStep().dependOn(&target_output.step);
+    }
 }
