@@ -93,10 +93,12 @@ fn walkDirectory(comptime path: []const u8, allocator: Allocator) !ProcMap {
 const ParseError = error{UnexpectedInput};
 
 fn parseProc(procDir: std.fs.Dir, allocator: Allocator) !Proc {
-    var buffer: [1000]u8 = undefined;
+    const buffer_size = 1000;
+    var buffer: [buffer_size]u8 = undefined;
 
     const stat = try procDir.openFile("stat", .{});
-    _ = try stat.readAll(&buffer);
+    const size = try stat.readAll(&buffer);
+    std.debug.assert(size <= buffer_size);
 
     var proc = Proc.init(allocator);
 
